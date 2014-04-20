@@ -177,7 +177,7 @@ function runJob(_if, _then) {
 
 	var state = null;
 	// Als _then een array is, dan pakken we random één van de items (states).
-	if (Object.prototype.toString.call( _then ) === '[object Array]') {
+	if (Array.isArray(_then)) {
 		var min = 0;
 		var max = _then.length - 1;
 		var index = Math.floor(Math.random()*(max-min+1)+min);
