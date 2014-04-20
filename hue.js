@@ -138,7 +138,7 @@ function scheduleSunBasedJobs() {
 			} else if (_if.outsideIs == "dark") {
 				_schedule = {
 					hour: SUNTIMES.darkStart.getHours(),
-					minute: SUNTIMES.darkStart.getMinutes()
+					minute: SUNTIMES.darkStart.getMinutes() - 30
 				};
 			}
 			SUNBASEDSCHEDULES.push(schedule.scheduleJob(_schedule, function() {
@@ -256,7 +256,7 @@ function getBridgeIP() {
         		return;
         	}
             BRIDGEIP = JSON.parse(output)[0].internalipaddress;
-            console.log('BridgeIP found.');
+            console.log(' -- BridgeIP found.');
         });
     });
 
