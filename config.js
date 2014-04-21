@@ -1,4 +1,4 @@
-var lights = [1, 2, 3, 4]; //TODO Get the lights from the hue API? Not very useful though, since the lights are hard code into the config.rules as well.
+var lights = [1, 2, 3, 4]; //Or should we get the lights from the hue API? Not very useful though, since the lights are hard code into the states as well.
 var states = {
   "bright": {
     "1": { "on": true, "bri": 254, "ct": 403 },

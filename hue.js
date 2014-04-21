@@ -57,9 +57,10 @@ function scheduleSunBasedJobs() {
   // lightStart is the first moment when it's completely light,
   // darkStart is the first moment when it starts getting dark.
   // This seems to be the most logical for now with the currently thought of rules.
+  // I guess it's a personal preference, so perhaps this should be a setting.
   var _sunTimes = SunCalc.getTimes(new Date(), settings.lat, settings.long);
   SUNTIMES.lightStart = new Date(_sunTimes.sunriseEnd);
-  SUNTIMES.darkStart = new Date(new Date(_sunTimes.sunsetStart).getTime() - 30 * 60000); // Subtract 30 minutes, to really get the moment when it starts getting dark.
+  SUNTIMES.darkStart = new Date(_sunTimes.goldenHour);
 
   // Cancel yesterday's sun based schedules.
   for (var i = 0; i < SUNBASEDSCHEDULES.length; i++) {
