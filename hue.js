@@ -69,8 +69,8 @@ function scheduleSunBasedJobs() {
 			var _then = config.rules[i].then;
 			var _schedule = null;
 			_schedule = {
-        hour: SUNTIMES[outsideIs + "Start"].getHours(),
-        minute: SUNTIMES[outsideIs + "Start"].getMinutes()
+        hour: SUNTIMES[_if.outsideIs + "Start"].getHours(),
+        minute: SUNTIMES[_if.outsideIs + "Start"].getMinutes()
       };
 			SUNBASEDSCHEDULES.push(schedule.scheduleJob(_schedule, function() {
 				runJob(_if, _then);
