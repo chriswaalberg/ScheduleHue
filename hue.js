@@ -55,7 +55,7 @@ function scheduleSunBasedJobs() {
   // This seems to be the most logical for now with the currently thought of rules.
 	var _sunTimes = SunCalc.getTimes(new Date(), settings.lat, settings.long);
 	SUNTIMES.lightStart = new Date(_sunTimes.sunriseEnd);
-	SUNTIMES.darkStart = new Date(_sunTimes.sunsetStart);
+	SUNTIMES.darkStart = new Date(new Date(_sunTimes.sunsetStart) - 30 * 60000); // Subtract 30 minutes, to really get the moment when it starts getting dark.
 
 	// Cancel yesterday's sun based schedules.
 	for (var i = 0; i < SUNBASEDSCHEDULES.length; i++) {
@@ -68,17 +68,10 @@ function scheduleSunBasedJobs() {
 			var _if = config.rules[i].if;
 			var _then = config.rules[i].then;
 			var _schedule = null;
-			if (_if.outsideIs == "light") {
-				_schedule = {
-					hour: SUNTIMES.lightStart.getHours(),
-					minute: SUNTIMES.lightStart.getMinutes()
-				};
-			} else if (_if.outsideIs == "dark") {
-				_schedule = {
-					hour: SUNTIMES.darkStart.getHours(),
-					minute: SUNTIMES.darkStart.getMinutes() - 30
-				};
-			}
+			_schedule = {
+        hour: SUNTIMES[outsideIs + "Start"].getHours(),
+        minute: SUNTIMES[outsideIs + "Start"].getMinutes()
+      };
 			SUNBASEDSCHEDULES.push(schedule.scheduleJob(_schedule, function() {
 				runJob(_if, _then);
 			}));
