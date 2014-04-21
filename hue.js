@@ -21,19 +21,19 @@ schedule.scheduleJob({ hour: 2 }, scheduleSunBasedJobs);
 function scheduleTimeBasedJobs() {
   for (var i = 0; i < config.rules.length; i++) {
     if (config.rules[i].if.schedule) {
-      // This was the only way I could think of to prevent runJob to be executed with overwritten _if and _then pointers.
-      // I really need to learn about scope and closures and stuff real soon!
-      (function(config) {
-        var _if = config.rules[i].if;
-        var _then = config.rules[i].then;
-        schedule.scheduleJob(config.rules[i].if.schedule, function() {
-          runJob(_if, _then);
-        });
-        console.log(' -- Time based schedule job set at: ' + JSON.stringify(config.rules[i].if.schedule));
-      })(config);
+      scheduleTimeBasedJob(config.rules[i]);
     }
   }
   console.log(' -- All time based schedule jobs set.');
+}
+
+function scheduleTimeBasedJob(rule) {
+  var _if = rule.if;
+  var _then = rule.then;
+  schedule.scheduleJob(rule.if.schedule, function() {
+    runJob(_if, _then);
+  });
+  console.log(' -- Time based schedule job set at: ' + JSON.stringify(rule.if.schedule));
 }
 
 function scheduleSunBasedJobs() {
@@ -69,24 +69,24 @@ function scheduleSunBasedJobs() {
 
   for (var i = 0; i < config.rules.length; i++) {
     if (!config.rules[i].if.schedule) {
-      // This was the only way I could think of to prevent runJob to be executed with overwritten _if and _then pointers.
-      // I really need to learn about scope and closures and stuff real soon!
-      (function(config) {
-        var _if = config.rules[i].if;
-        var _then = config.rules[i].then;
-        var _schedule = null;
-        _schedule = {
-          hour: SUNTIMES[_if.outsideIs + "Start"].getHours(),
-          minute: SUNTIMES[_if.outsideIs + "Start"].getMinutes()
-        };
-        SUNBASEDSCHEDULES.push(schedule.scheduleJob(_schedule, function() {
-          runJob(_if, _then);
-        }));
-        console.log(' -- Sun based schedule job set at: ' + JSON.stringify(_schedule));
-      })(config);
+      scheduleSunBasedJob(config.rules[i]);
     }
   }
   console.log(' -- All sun based schedule jobs set.');
+}
+
+function scheduleSunBasedJob(rule) {
+  var _if = rule.if;
+  var _then = rule.then;
+  var _schedule = null;
+  _schedule = {
+    hour: SUNTIMES[_if.outsideIs + "Start"].getHours(),
+    minute: SUNTIMES[_if.outsideIs + "Start"].getMinutes()
+  };
+  SUNBASEDSCHEDULES.push(schedule.scheduleJob(_schedule, function() {
+    runJob(_if, _then);
+  }));
+  console.log(' -- Sun based schedule job set at: ' + JSON.stringify(_schedule));
 }
 
 // runJob first checks if we are ready to go. If all lights are green, then we set the state of each lights in the rule.

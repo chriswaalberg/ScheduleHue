@@ -1,7 +1,10 @@
 var lights = [1, 2, 3, 4]; //TODO Get the lights from the hue API? Not very useful though, since the lights are hard code into the config.rules as well.
 var states = {
   "bright": {
-    "all": { "on": true, "bri": 219, "hue": 33849, "sat": 44 }
+    "1": { "on": true, "bri": 254, "ct": 403 },
+    "2": { "on": true, "bri": 254, "ct": 403 },
+    "3": { "on": true, "bri": 254, "ct": 403 },
+    "4": { "on": true, "bri": 254, "xy": [ 0.4186, 0.1813 ] }
   },
   "chill": [
     {
@@ -41,6 +44,15 @@ var rules = [
   {
     "if": { "schedule": { hour: 0, minute: 0 } },
     "then": states["off"] // TODO slowly fade out lights
+  },
+  // TEST
+  {
+    "if": { "schedule": { hour: 20, minute: 27 } },
+    "then": states["off"]
+  },
+  {
+    "if": { "schedule": { hour: 20, minute: 28 } },
+    "then": states["bright"]
   }
 ];
 
