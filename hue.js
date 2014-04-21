@@ -1,7 +1,7 @@
 var http = require('http');
 var schedule = require('node-schedule');
 var SunCalc = require('suncalc');
-var settings = require('./personal-settings');
+var settings = require('./settings');
 var config = require('./config');
 
 var BRIDGEIP = null;
