@@ -35,20 +35,20 @@ function scheduleTimeBasedJobs() {
 
 function scheduleSunBasedJobs() {
   // Order of SunTimes properties (example times are from april 20th)
-  // nadir: 				01:42
-  // nightEnd: 			04:20
-  // nauticalDawn: 	05:13
-  // dawn: 					05:59
-  // sunrise: 			06:36
-  // sunriseEnd: 		06:40
+  // nadir:         01:42
+  // nightEnd:      04:20
+  // nauticalDawn:  05:13
+  // dawn:          05:59
+  // sunrise:       06:36
+  // sunriseEnd:    06:40
   // goldenHourEnd: 07:22
-  // solarNoon: 		13:42
-  // goldenHour: 		20:03
-  // sunsetStart: 	20:45
-  // sunset: 				20:49
-  // dusk: 					21:25
-  // nauticalDusk: 	22:12
-  // night: 				23:05
+  // solarNoon:     13:42
+  // goldenHour:    20:03
+  // sunsetStart:   20:45
+  // sunset:        20:49
+  // dusk:          21:25
+  // nauticalDusk:  22:12
+  // night:         23:05
 
   // There is a subtle difference between lightStart and dakrStart:
   // lightStart is the first moment when it's completely light,
