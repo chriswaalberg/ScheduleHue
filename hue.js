@@ -1,125 +1,72 @@
 var http = require('http');
 var schedule = require('node-schedule');
 var SunCalc = require('suncalc');
+var settings = require('./personal-settings');
+var config = require('./config');
 
 var BRIDGEIP = null;
-var LIGHTS = [1, 2, 3, 4]; //TODO lampen ophalen? Nier per sé nuttig, aangezien de config ook per lamp hard coded is.
-var USERNAME = "chriswaalberg";
 var SUNTIMES = {};
 var SUNBASEDSCHEDULES = [];
-var States = {
-	"bright": {
-		"all": { "on": true, "bri": 219, "hue": 33849, "sat": 44 }
-	},
-	"chill": [
-		{
-			"1": { "on": true, "bri": 225, "hue": 52168, "sat": 176 },
-			"2": { "on": true, "bri": 254, "hue": 55550, "sat": 162 },
-			"3": { "on": true, "bri": 190, "hue": 51316, "sat": 179 },
-			"4": { "on": true, "bri": 94, "hue": 43647, "sat": 152 }
-		}
-	],
-	"off": { "all": { "on": false } }
-};
 
-var config = [
-	{
-		"if": { "schedule": { hour: 7, minute: 30 }, "outsideIs": "dark" },
-		"then": STATES["bright"]
-	},
-	{
-		"if": { "outsideIs": "light" },
-		"then": STATES["off"]
-	},
-	{
-		"if": { "outsideIs": "dark" },
-		"then": STATES["chill"]
-	},
-	{
-		"if": { "schedule": { hour: 17, minute: 45 } },
-		"then": STATES["bright"]
-	},
-	{
-		"if": { "schedule": { hour: 19, minute: 15 }, "outsideIs": "dark" },
-		"then": STATES["chill"]
-	},
-	{
-		"if": { "schedule": { hour: 19, minute: 15 }, "outsideIs": "light" },
-		"then": STATES["off"]
-	},
-	{
-		"if": { "schedule": { hour: 0, minute: 0 } },
-		"then": STATES["off"] // TODO slowly fade out lights
-	},
-	// TESTS
-	{
-		"if": { "schedule": { hour: 21, minute: 12 }, "outsideIs": "dark" },
-		"then": STATES["off"]
-	},
-	{
-		"if": { "schedule": { hour: 21, minute: 13 }, "outsideIs": "dark" },
-		"then": STATES["chill"]
-	}
-];
-
-// We gebruiken geen promises, omdat het bridge IP echt wel bekend is tegen de tijd dat de eerste scheduled job van start gaat.
+// We don't use promises, because the bridge IP will definitely be known by the time the first schedule hits.
 getBridgeIP();
 scheduleTimeBasedJobs();
 scheduleSunBasedJobs();
 schedule.scheduleJob({ hour: 2 }, scheduleSunBasedJobs);
 
-// scheduleTimeBasedJobs en scheduleSunBasedJobs hadden op zich ook gecombineerd kunnen worden,
-// en beide elke dag opnieuw ingesteld kunnen worden. Maar ach, fuck it, whatever.
+// scheduleTimeBasedJobs and scheduleSunBasedJobs could have been combined,
+// which would mean both sun based jobs and time based jobs would we rescheduled every night.
+// But hey, fuck it, whatever.
 function scheduleTimeBasedJobs() {
-	for (var i = 0; i < config.length; i++) {
-		if (config[i].if.schedule) {
-			// TODO het lijkt erop dat de laatst toegevoegde altijd uitgevoerd wordt...?!
-			var _if = config[i].if;
-			var _then = config[i].then;
-			schedule.scheduleJob(config[i].if.schedule, function() {
+	for (var i = 0; i < config.rules.length; i++) {
+		if (config.rules[i].if.schedule) {
+			// TODO BUG It seems the last state in the config.rules is always the one being executed...?!
+			var _if = config.rules[i].if;
+			var _then = config.rules[i].then;
+			schedule.scheduleJob(config.rules[i].if.schedule, function() {
 				runJob(_if, _then);
 			});
-			console.log(' -- Time based schedule job set at: ' + JSON.stringify(config[i].if.schedule));
+			console.log(' -- Time based schedule job set at: ' + JSON.stringify(config.rules[i].if.schedule));
 		}
 	}
 	console.log(' -- All time based schedule jobs set.');
 }
 
 function scheduleSunBasedJobs() {
-	// Volgorde van SunTimes properties (tijden zijn van 20 april)
-	// nadir: 			01:42
-	// nightEnd: 		04:20
+	// Order of SunTimes properties (example times are from april 20th)
+	// nadir: 				01:42
+	// nightEnd: 			04:20
 	// nauticalDawn: 	05:13
-	// dawn: 			05:59
-	// sunrise: 		06:36
+	// dawn: 					05:59
+	// sunrise: 			06:36
 	// sunriseEnd: 		06:40
-	// goldenHourEnd: 	07:22
+	// goldenHourEnd: 07:22
 	// solarNoon: 		13:42
 	// goldenHour: 		20:03
 	// sunsetStart: 	20:45
-	// sunset: 			20:49
-	// dusk: 			21:25
+	// sunset: 				20:49
+	// dusk: 					21:25
 	// nauticalDusk: 	22:12
-	// night: 			23:05
+	// night: 				23:05
 
-	// Er zit een subtiel verschil tussen lightStart en darkStart:
-	// lightStart is het eerste moment dat het volledig licht is,
-	// darkStart is het eerste moment dat het net donker begint te worden.
-	// Dat is het meest logisch voor de tot nu toe bedachte programma's.
-	var _sunTimes = SunCalc.getTimes(new Date(), 52.0642017, 4.2794736);
+  // There is a subtle difference between lightStart and dakrStart:
+  // lightStart is the first moment when it's completely light,
+  // darkStart is the first moment when it starts getting dark.
+  // This seems to be the most logical for now with the currently thought of rules.
+	var _sunTimes = SunCalc.getTimes(new Date(), settings.lat, settings.long);
 	SUNTIMES.lightStart = new Date(_sunTimes.sunriseEnd);
 	SUNTIMES.darkStart = new Date(_sunTimes.sunsetStart);
 
-	// Sun based schedules van gisteren annuleren.
+	// Cancel yesterday's sun based schedules.
 	for (var i = 0; i < SUNBASEDSCHEDULES.length; i++) {
 		SUNBASEDSCHEDULES[i].cancel();
 	}
 	SUNBASEDSCHEDULES = [];
 
-	for (var i = 0; i < config.length; i++) {
-		if (!config[i].if.schedule) {
-			var _if = config[i].if;
-			var _then = config[i].then;
+	for (var i = 0; i < config.rules.length; i++) {
+		if (!config.rules[i].if.schedule) {
+			var _if = config.rules[i].if;
+			var _then = config.rules[i].then;
 			var _schedule = null;
 			if (_if.outsideIs == "light") {
 				_schedule = {
@@ -141,13 +88,13 @@ function scheduleSunBasedJobs() {
 	console.log(' -- All sun based schedule jobs set.');
 }
 
-// runJob controleert eerst of we echt aan de slag mogen. Zo ja, dan zetten we de state van elke (relevante) lamp.
+// runJob first checks if we are ready to go. If all lights are green, then we set the state of each lights in the rule.
 function runJob(_if, _then) {
 	console.log(' -- runJob:')
 	console.log(' -- -- if: ' + JSON.stringify(_if));
 	console.log(' -- -- then: ' + JSON.stringify(_then));
 
-	// Het kan in theorie nooit voorkomen dat we hier het bride IP niet weten, just to be sure.
+	// It should never happen that we don't have a bridge IP here, just to be sure.
 	if (BRIDGEIP == null) {
 		getBridgeIP();
 		setTimeout(function() {
@@ -157,7 +104,7 @@ function runJob(_if, _then) {
 		return;
 	}
 
-	// Als er een sun based if meegegeven is, controleren we of die wel true is.
+  // If there is a sun based 'if', then we check if it's 'true'.
 	var now = new Date();
 	var outsideIsDark = now < SUNTIMES.lightStart || now > SUNTIMES.darkStart;
 	var outsideIsLight = now > SUNTIMES.lightStart && now < SUNTIMES.darkStart;
@@ -167,7 +114,7 @@ function runJob(_if, _then) {
 	}
 
 	var state = null;
-	// Als _then een array is, dan pakken we random één van de items (states).
+  // If _then is an array, we randomly select one of the child rules.
 	if (Array.isArray(_then)) {
 		var min = 0;
 		var max = _then.length - 1;
@@ -177,13 +124,13 @@ function runJob(_if, _then) {
 		state = _then;
 	}
 
-	// Als de _then state voor alle lampen geldt, zetten we één voor één de lampen op die state.
+  // If the _then state applies to all lights, we set the state to the lights one by one.
 	if (state.all) {
 		for (var i = 0; i < LIGHTS.length; i++) {
 			setLightState(i+1, state.all);
 		}
 	}
-	// Anders gaan we de individuele meegegeven states af en zetten die op de desbetreffende lamp.
+  // Else we go through each individual given light state and set it to the light in question.
 	else {
 		for (var key in state) {
 			setLightState(key, state[key]);
@@ -197,7 +144,7 @@ function setLightState(light, state) {
 	var options = {
 	    host: BRIDGEIP,
 	    port: 80,
-	    path: '/api/' + USERNAME + '/lights/' + light + '/state',
+	    path: '/api/' + settings.username + '/lights/' + light + '/state',
 	    method: 'PUT',
 	    headers: {
 	        'Content-Type': 'application/json'
