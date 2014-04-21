@@ -3,7 +3,7 @@
   "description": "This NodeJS script lets you configure time based and sunlight based schedules for your hue lights.",
   "author": "Chris Waalberg <chris@q42.nl>",
   "dependencies": {
-    "http": ">= 0.0.0",
+    "request": ">= 2.33.0",
     "node-schedule": ">= 0.1.13",
     "SunCalc": ">= 1.4.0"
   },

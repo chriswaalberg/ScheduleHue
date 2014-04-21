@@ -1,4 +1,4 @@
-var http = require('http');
+var request = require('request');
 var schedule = require('node-schedule');
 var SunCalc = require('suncalc');
 var settings = require('./settings');
@@ -13,6 +13,7 @@ getBridgeIP();
 scheduleTimeBasedJobs();
 scheduleSunBasedJobs();
 schedule.scheduleJob({ hour: 2 }, scheduleSunBasedJobs);
+// TODO Check which rule currently applies, and apply it.
 
 // scheduleTimeBasedJobs and scheduleSunBasedJobs could have been combined,
 // which would mean both sun based jobs and time based jobs would we rescheduled every night.
@@ -133,68 +134,38 @@ function runJob(_if, _then) {
 
 function setLightState(light, state) {
 	console.log(' -- setLightState: ' + light + ' ' + JSON.stringify(state));
-	
-	var options = {
-	    host: BRIDGEIP,
-	    port: 80,
-	    path: '/api/' + settings.username + '/lights/' + light + '/state',
-	    method: 'PUT',
-	    headers: {
-	        'Content-Type': 'application/json'
-	    }
-	};
-	var req = http.request(options, function(res)
+
+  request(
     {
-        var output = '';
-        res.setEncoding('utf8');
-
-        res.on('data', function (chunk) {
-            output += chunk;
-        });
-    });
-
-    req.on('error', function(err) {
-        // TODO
-        console.log(' -- ERROR: Light state not set: ' + err);
-    });
-
-    req.write(JSON.stringify(state));
-    req.end();
+      method: 'PUT',
+      uri: 'http://' + BRIDGEIP + '/api/' + settings.username + '/lights/' + light + '/state',
+      multipart: [
+        {
+          'content-type': 'application/json',
+          body: JSON.stringify(state)
+        }
+      ]
+    },
+    function (error, response, body) {
+      if (response.statusCode == 201) {
+        //console.log('document saved as: http://mikeal.iriscouch.com/testjs/'+ rand)
+      } else {
+        console.log(' -- ERROR: Light state not set: ' + response.statusCode, body);
+      }
+    }
+  );
 }
 
 function getBridgeIP() {
-	var options = {
-	    host: 'www.meethue.com',
-	    port: 80,
-	    path: '/api/nupnp',
-	    method: 'GET',
-	    headers: {
-	        'Content-Type': 'application/json'
-	    }
-	};
-	var req = http.request(options, function(res)
-    {
-        var output = '';
-        res.setEncoding('utf8');
-
-        res.on('data', function (chunk) {
-            output += chunk;
-        });
-
-        res.on('end', function() {
-        	if (!JSON.parse(output) || !JSON.parse(output)[0] || !JSON.parse(output)[0].internalipaddress) {
-        		console.log(' -- ERROR: No bridge found.');
-        		return;
-        	}
-            BRIDGEIP = JSON.parse(output)[0].internalipaddress;
-            console.log(' -- BridgeIP found: ' + BRIDGEIP);
-        });
-    });
-
-    req.on('error', function(err) {
-        // TODO
-        console.log(' -- ERROR: No bridge found: ' + err);
-    });
-
-    req.end();
+  request('http://www.meethue.com/api/nupnp', function (error, response, body) {
+    if (!error && response.statusCode == 200) {
+      var json = JSON.parse(body);
+      if (!json || !json[0] || !json[0].internalipaddress) {
+        console.log(' -- ERROR: No bridge found.');
+        return;
+      }
+      BRIDGEIP = json[0].internalipaddress;
+      console.log(' -- BridgeIP found: ' + BRIDGEIP);
+    }
+  });
 }
