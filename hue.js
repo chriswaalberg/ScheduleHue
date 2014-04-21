@@ -21,13 +21,16 @@ schedule.scheduleJob({ hour: 2 }, scheduleSunBasedJobs);
 function scheduleTimeBasedJobs() {
   for (var i = 0; i < config.rules.length; i++) {
     if (config.rules[i].if.schedule) {
-      // TODO BUG It seems the last state in the config.rules is always the one being executed...?!
-      var _if = config.rules[i].if;
-      var _then = config.rules[i].then;
-      schedule.scheduleJob(config.rules[i].if.schedule, function() {
-        runJob(_if, _then);
-      });
-      console.log(' -- Time based schedule job set at: ' + JSON.stringify(config.rules[i].if.schedule));
+      // This was the only way I could think of to prevent runJob to be executed with overwritten _if and _then pointers.
+      // I really need to learn about scope and closures and stuff real soon!
+      (function(config) {
+        var _if = config.rules[i].if;
+        var _then = config.rules[i].then;
+        schedule.scheduleJob(config.rules[i].if.schedule, function() {
+          runJob(_if, _then);
+        });
+        console.log(' -- Time based schedule job set at: ' + JSON.stringify(config.rules[i].if.schedule));
+      })(config);
     }
   }
   console.log(' -- All time based schedule jobs set.');
@@ -56,7 +59,7 @@ function scheduleSunBasedJobs() {
   // This seems to be the most logical for now with the currently thought of rules.
   var _sunTimes = SunCalc.getTimes(new Date(), settings.lat, settings.long);
   SUNTIMES.lightStart = new Date(_sunTimes.sunriseEnd);
-  SUNTIMES.darkStart = new Date(new Date(_sunTimes.sunsetStart) - 30 * 60000); // Subtract 30 minutes, to really get the moment when it starts getting dark.
+  SUNTIMES.darkStart = new Date(new Date(_sunTimes.sunsetStart).getTime() - 30 * 60000); // Subtract 30 minutes, to really get the moment when it starts getting dark.
 
   // Cancel yesterday's sun based schedules.
   for (var i = 0; i < SUNBASEDSCHEDULES.length; i++) {
@@ -66,17 +69,21 @@ function scheduleSunBasedJobs() {
 
   for (var i = 0; i < config.rules.length; i++) {
     if (!config.rules[i].if.schedule) {
-      var _if = config.rules[i].if;
-      var _then = config.rules[i].then;
-      var _schedule = null;
-      _schedule = {
-        hour: SUNTIMES[_if.outsideIs + "Start"].getHours(),
-        minute: SUNTIMES[_if.outsideIs + "Start"].getMinutes()
-      };
-      SUNBASEDSCHEDULES.push(schedule.scheduleJob(_schedule, function() {
-        runJob(_if, _then);
-      }));
-      console.log(' -- Sun based schedule job set at: ' + JSON.stringify(_schedule));
+      // This was the only way I could think of to prevent runJob to be executed with overwritten _if and _then pointers.
+      // I really need to learn about scope and closures and stuff real soon!
+      (function(config) {
+        var _if = config.rules[i].if;
+        var _then = config.rules[i].then;
+        var _schedule = null;
+        _schedule = {
+          hour: SUNTIMES[_if.outsideIs + "Start"].getHours(),
+          minute: SUNTIMES[_if.outsideIs + "Start"].getMinutes()
+        };
+        SUNBASEDSCHEDULES.push(schedule.scheduleJob(_schedule, function() {
+          runJob(_if, _then);
+        }));
+        console.log(' -- Sun based schedule job set at: ' + JSON.stringify(_schedule));
+      })(config);
     }
   }
   console.log(' -- All sun based schedule jobs set.');
@@ -99,10 +106,11 @@ function runJob(_if, _then) {
   }
 
   // If there is a sun based 'if', then we check if it's 'true'.
-  var now = new Date();
+  var now = new Date(new Date().getTime() + 1 * 60000); // We add one minute, because darkStart and lightStart can be milliseconds past the time we use to schedule the job. We could also use milliseconds for the schedules, but fuck it.
   var outsideIsDark = now < SUNTIMES.lightStart || now > SUNTIMES.darkStart;
   var outsideIsLight = now > SUNTIMES.lightStart && now < SUNTIMES.darkStart;
-  if ((_if.outsideIs == "light" && outsideIsDark)	|| (_if.outsideIs == "dark" && outsideIsLight)) {
+  console.log(now, SUNTIMES.lightStart, SUNTIMES.darkStart);
+  if ((_if.outsideIs == "light" && outsideIsDark) || (_if.outsideIs == "dark" && outsideIsLight)) {
     console.log(' -- Not running scheduled job, because it\s not ' + _if.outsideIs + ' right now.');
     return;
   }
@@ -158,3 +166,6 @@ function getBridgeIP() {
     }
   });
 }
+
+
+
