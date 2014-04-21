@@ -9,4 +9,6 @@ Examples of the possibilities:
  * Have all lights switch to a nice atmospheric state when it's starts getting dark outside.
  * Have the lights over the dinner table switch to a brighter state at 18.00 o'clock, but only if it's already dark outside.
 
+I run this on a Mac mini, but it could also be run on a Raspberry Pi, I suppose. The best thing though, would be Philips adding this functionality to the bridge itself.
+
 Have fun!
