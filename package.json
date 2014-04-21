@@ -7,5 +7,7 @@
     "node-schedule": ">= 0.1.13",
     "SunCalc": ">= 1.4.0"
   },
-  "engine": "node 0.10.26"
+  "engines": {
+    "node": "0.10.x"
+  }
 }
