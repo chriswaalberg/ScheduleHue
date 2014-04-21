@@ -41,12 +41,7 @@ var rules = [
   {
     "if": { "schedule": { hour: 0, minute: 0 } },
     "then": states["off"] // TODO slowly fade out lights
-  },
-  // TEST
-  // {
-  //   "if": { "schedule": { hour: 14, minute: 15 }, "outsideIs": "light" },
-  //   "then": states["chill"]
-  // }
+  }
 ];
 
 exports.lights = lights;

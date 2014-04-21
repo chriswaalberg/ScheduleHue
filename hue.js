@@ -120,7 +120,7 @@ function runJob(_if, _then) {
 
   // If the _then state applies to all lights, we set the state to the lights one by one.
 	if (state.all) {
-		for (var i = 0; i < LIGHTS.length; i++) {
+		for (var i = 0; i < config.lights.length; i++) {
 			setLightState(i+1, state.all);
 		}
 	}
@@ -133,27 +133,17 @@ function runJob(_if, _then) {
 }
 
 function setLightState(light, state) {
-	console.log(' -- setLightState: ' + light + ' ' + JSON.stringify(state));
+  var url = 'http://' + BRIDGEIP + '/api/' + settings.username + '/lights/' + light + '/state';
 
-  request(
-    {
-      method: 'PUT',
-      uri: 'http://' + BRIDGEIP + '/api/' + settings.username + '/lights/' + light + '/state',
-      multipart: [
-        {
-          'content-type': 'application/json',
-          body: JSON.stringify(state)
-        }
-      ]
-    },
-    function (error, response, body) {
-      if (response.statusCode == 201) {
-        //console.log('document saved as: http://mikeal.iriscouch.com/testjs/'+ rand)
-      } else {
-        console.log(' -- ERROR: Light state not set: ' + response.statusCode, body);
-      }
+	console.log(' -- setLightState: ' + url, JSON.stringify(state));
+
+  request.put({url:url, json:state}, function (error, response, body) {
+    if (response.statusCode == 200) {
+      console.log(' -- Response: ', body);
+    } else {
+      console.log(' -- ERROR: Light state not set: ' + response.statusCode, body);
     }
-  );
+  });
 }
 
 function getBridgeIP() {
