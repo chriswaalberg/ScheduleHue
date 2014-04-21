@@ -4,42 +4,23 @@ var SunCalc = require('suncalc');
 
 var BRIDGEIP = null;
 var LIGHTS = [1, 2, 3, 4]; //TODO lampen ophalen? Nier per sé nuttig, aangezien de config ook per lamp hard coded is.
-var USERNAME = "USERNAME";
+var USERNAME = "chriswaalberg";
 var SUNTIMES = {};
 var SUNBASEDSCHEDULES = [];
-var STATES = {
+var States = {
 	"bright": {
 		"all": { "on": true, "bri": 219, "hue": 33849, "sat": 44 }
 	},
 	"chill": [
 		{
-			"1": { "on": true, "bri": 219, "hue": 13849, "sat": 44 },
-			"2": { "on": true, "bri": 219, "hue": 23849, "sat": 44 },
-			"3": { "on": true, "bri": 219, "hue": 33849, "sat": 44 },
-			"4": { "on": true, "bri": 219, "hue": 43849, "sat": 44 } 
-		},
-		{
-			"1": { "on": true, "bri": 100, "hue": 13849, "sat": 24 },
-			"2": { "on": true, "bri": 100, "hue": 23849, "sat": 24 },
-			"3": { "on": true, "bri": 100, "hue": 33849, "sat": 24 },
-			"4": { "on": true, "bri": 100, "hue": 43849, "sat": 24 }
+			"1": { "on": true, "bri": 225, "hue": 52168, "sat": 176 },
+			"2": { "on": true, "bri": 254, "hue": 55550, "sat": 162 },
+			"3": { "on": true, "bri": 190, "hue": 51316, "sat": 179 },
+			"4": { "on": true, "bri": 94, "hue": 43647, "sat": 152 }
 		}
 	],
 	"off": { "all": { "on": false } }
 };
-
-// ochtend
-// if "het is 7.30 uur" en "het is nog donker" then "lampen boven de tafel vol aan"
-// if "het is niet meer donker" then "alle lampen uit"
-
-// avond
-// if "het wordt donker" then "alle lampen aan, random avondprogramma"
-// if "het is 18.00 uur" then "lampen boven de tafel vol aan"
-// if "het is 19.15 uur" en "het is donker" then "alle lampen aan, random avondprogramma"
-// if "het is 19.15 uur" en "het is licht" then "alle lampen uit"
-
-// nacht
-// if "het is 0.00 uur" then "langzaam alle lampen uit"
 
 var config = [
 	{
@@ -68,7 +49,16 @@ var config = [
 	},
 	{
 		"if": { "schedule": { hour: 0, minute: 0 } },
+		"then": STATES["off"] // TODO slowly fade out lights
+	},
+	// TESTS
+	{
+		"if": { "schedule": { hour: 21, minute: 12 }, "outsideIs": "dark" },
 		"then": STATES["off"]
+	},
+	{
+		"if": { "schedule": { hour: 21, minute: 13 }, "outsideIs": "dark" },
+		"then": STATES["chill"]
 	}
 ];
 
@@ -83,6 +73,7 @@ schedule.scheduleJob({ hour: 2 }, scheduleSunBasedJobs);
 function scheduleTimeBasedJobs() {
 	for (var i = 0; i < config.length; i++) {
 		if (config[i].if.schedule) {
+			// TODO het lijkt erop dat de laatst toegevoegde altijd uitgevoerd wordt...?!
 			var _if = config[i].if;
 			var _then = config[i].then;
 			schedule.scheduleJob(config[i].if.schedule, function() {
@@ -256,7 +247,7 @@ function getBridgeIP() {
         		return;
         	}
             BRIDGEIP = JSON.parse(output)[0].internalipaddress;
-            console.log(' -- BridgeIP found.');
+            console.log(' -- BridgeIP found: ' + BRIDGEIP);
         });
     });
 
